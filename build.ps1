@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 <#
  _   _                       _          ___     __
 | \ | | ___  _ __ __ _  __ _| |_ ___   / \ \   / /
@@ -58,16 +60,26 @@ try {
         $files += $axsFile
     }
 
-    foreach ($file in $files) {
-        Write-Host "Running genlinx on $file" -ForegroundColor Cyan
+    Write-Host "Building $($files.Count) files..." -ForegroundColor Cyan
 
-        & "genlinx" build -s `"$file`"
+    foreach ($file in $files) {
+        $x = $files.IndexOf($file) + 1
+        Write-Host "Building file $x of $($files.Count)..." -ForegroundColor Cyan
+
+        $percent = [math]::Round((($x - 1) / $files.Count) * 100, 2)
+        Write-Host "[$percent%]" -ForegroundColor Cyan
+
+        & "genlinx" build -s $file
 
         if ($LASTEXITCODE -ne 0) {
             Write-Host "genlinx failed with exit code $($LASTEXITCODE)" -ForegroundColor Red
             exit 1
         }
     }
+
+    $percent = [math]::Round(($x / $files.Count) * 100, 2)
+    Write-Host "[$percent%]" -ForegroundColor Cyan
+    Write-Host "Build complete!" -ForegroundColor Green
 }
 catch {
     Write-Host $_.Exception.GetBaseException().Message -ForegroundColor Red
