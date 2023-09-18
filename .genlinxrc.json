@@ -1,8 +1,8 @@
 {
     "build": {
         "nlrc": {
-            "includePath": [".\\lib"],
-            "modulePath": [".\\src"]
+            "includePath": ["./lib"],
+            "modulePath": ["./src"]
         }
     }
 }
