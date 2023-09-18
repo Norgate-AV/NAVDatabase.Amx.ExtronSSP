@@ -1,6 +1,7 @@
-PROGRAM_NAME='LibExtronDMP'
+PROGRAM_NAME='LibExtronSSP'
 
 (***********************************************************)
+#include 'NAVFoundation.Core.axi'
 
 /*
  _   _                       _          ___     __
