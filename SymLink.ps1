@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+#Requires -RunAsAdministrator
 
 <#
  _   _                       _          ___     __
@@ -35,53 +36,48 @@ SOFTWARE.
 
 param (
     [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
     [string]
-    $Path = "."
+    $ModulePath = "C:\Program Files (x86)\Common Files\AMXShare\Duet\module",
+
+    [Parameter(Mandatory = $false)]
+    [switch]
+    $Delete = $false
 )
 
+$prevPWD = $PWD
+Set-Location $PSScriptRoot
+
 try {
-    $Path = Resolve-Path $Path
+    $files = Get-ChildItem -File "**/*.tko" -Recurse | Where-Object { $_.FullName -notmatch "(.git|.history|node_modules)" }
 
-    $axiFiles = Get-ChildItem -Path $Path -Recurse -File -Filter *.axi -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch ".history" }
-    $axsFiles = Get-ChildItem -Path $Path -Recurse -File -Filter *.axs -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch ".history" }
-
-    if (!$axiFiles -and !$axsFiles) {
-        Write-Host "No files found in $Path" -ForegroundColor Yellow
-        exit
+    if (!$files) {
+        Write-Host "No files found"
+        exit 1
     }
 
-    $files = [System.Collections.ArrayList]::new()
+    $ModulePath = Resolve-Path $ModulePath
 
-    foreach ($axiFile in $axiFiles) {
-        $files += $axiFile
-    }
-
-    foreach ($axsFile in $axsFiles) {
-        $files += $axsFile
-    }
-
-    Write-Host "Building $($files.Count) files..." -ForegroundColor Cyan
+    !$Delete ? (Write-Host "Creating symlinks...") : (Write-Host "Deleting symlinks...")
 
     foreach ($file in $files) {
-        $x = $files.IndexOf($file) + 1
-        Write-Host "Building file $x of $($files.Count)..." -ForegroundColor Cyan
+        $linkPath = "$ModulePath/$($file.Name)"
 
-        $percent = [math]::Round((($x - 1) / $files.Count) * 100, 2)
-        Write-Host "[$percent%]" -ForegroundColor Cyan
-
-        & pnpm "genlinx" build -s $file
-
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "genlinx failed with exit code $($LASTEXITCODE)" -ForegroundColor Red
-            exit 1
+        if ($Delete) {
+            Write-Verbose "Deleting symlink: $linkPath"
+            Remove-Item -Path $linkPath -Force | Out-Null
+            continue
         }
-    }
 
-    $percent = [math]::Round(($x / $files.Count) * 100, 2)
-    Write-Host "[$percent%]" -ForegroundColor Cyan
-    Write-Host "Build complete!" -ForegroundColor Green
+        $target = $file.FullName
+        Write-Verbose "Creating symlink: $linkPath -> $target"
+        New-Item -ItemType SymbolicLink -Path $linkPath -Target $target -Force | Out-Null
+    }
 }
 catch {
     Write-Host $_.Exception.GetBaseException().Message -ForegroundColor Red
     exit 1
+}
+finally {
+    Set-Location $prevPWD
 }
