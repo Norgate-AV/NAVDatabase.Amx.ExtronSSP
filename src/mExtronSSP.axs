@@ -4,6 +4,7 @@ MODULE_NAME='mExtronSSP'    (
                             )
 
 (***********************************************************)
+#DEFINE USING_NAV_MODULE_BASE_CALLBACKS
 #DEFINE USING_NAV_MODULE_BASE_PROPERTY_EVENT_CALLBACK
 #DEFINE USING_NAV_MODULE_BASE_PASSTHRU_EVENT_CALLBACK
 #DEFINE USING_NAV_STRING_GATHER_CALLBACK
@@ -282,8 +283,12 @@ define_function NAVModulePropertyEventCallback(_NAVModulePropertyEvent event) {
 
 
 #IF_DEFINED USING_NAV_MODULE_BASE_PASSTHRU_EVENT_CALLBACK
-define_function NAVModulePassthruEventCallback(char data[]) {
-    SendString(data)
+define_function NAVModulePassthruEventCallback(_NAVModulePassthruEvent event) {
+    if (event.Device != vdvObject) {
+        return
+    }
+
+    SendString(event.Payload)
 }
 #END_IF
 
