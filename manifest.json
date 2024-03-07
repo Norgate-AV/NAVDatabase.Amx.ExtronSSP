@@ -1,7 +1,7 @@
 {
     "name": "NAVDatabase.Amx.ExtronSSP",
     "description": "NetLinx module for Extron SSP-200",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "license": "MIT",
     "files": ["src/*.tko", "SymLink.ps1", "LICENSE", "README.md"],
     "repository": {
