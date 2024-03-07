@@ -389,7 +389,7 @@ data_event[vdvObject] {
             case NAV_MODULE_EVENT_VOLUME: {
                 switch (message.Parameter[1]) {
                     case 'ABS': {
-                        SendString(BuildVolume(atoi(message.Parameter[1])))
+                        SendString(BuildVolume(atoi(message.Parameter[2])))
                     }
                     default: {
                         stack_var sinteger value
