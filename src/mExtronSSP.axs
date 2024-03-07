@@ -185,6 +185,12 @@ define_function NAVStringGatherCallback(_NAVStringGatherResult args) {
 
             outputActual[NAV_SWITCH_LEVEL_AUD][1] = input
             send_string vdvObject, "'SWITCH-', itoa(input)"
+
+            if (module.Device.IsInitialized) {
+                return
+            }
+
+            module.Device.IsInitialized = true
         }
         active (NAVStartsWith(data, 'Vol')): {
             stack_var integer volume
@@ -256,8 +262,6 @@ define_function Init() {
     SendString('V')
     SendString('Z')
     SendString('$')
-
-    module.Device.IsInitialized = true
 }
 
 
@@ -435,6 +439,7 @@ timeline_event[TL_HEARTBEAT] {
 timeline_event[TL_NAV_FEEDBACK] {
     [vdvObject, NAV_IP_CONNECTED]	= (module.Device.SocketConnection.IsConnected)
     [vdvObject, DEVICE_COMMUNICATING] = (module.Device.IsCommunicating)
+    [vdvObject, DATA_INITIALIZED] = (module.Device.IsInitialized)
     [vdvObject, VOL_MUTE_FB] = (currentMute.Actual)
 }
 
