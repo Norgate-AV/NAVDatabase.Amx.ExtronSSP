@@ -83,7 +83,7 @@ DEFINE_VARIABLE
 volatile long driveTick[]   = { 200 }
 volatile long socketCheck[] = { 3000 }
 volatile long heartbeat[]   = { 20000 }
-volatile long volumeRamp[]  = { 500 }
+volatile long volumeRamp[]  = { 250 }
 
 volatile integer output[MAX_LEVELS][MAX_OUTPUTS]
 volatile integer outputPending[MAX_LEVELS][MAX_OUTPUTS]
