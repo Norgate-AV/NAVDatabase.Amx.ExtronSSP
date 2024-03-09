@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.0](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v1.0.0...v1.1.0) (2024-03-09)
+
+### 🌟 Features
+
+-   auto update scoop bucket ([cc9e4ed](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/commit/cc9e4ed7ff2f489aaddc07a4fcd43cbfaf897ec3))
+
 ## 1.0.0 (2024-03-07)
 
 ### 🌟 Features
