@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.2](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v1.1.1...v1.1.2) (2025-01-16)
+
+### 🐛 Bug Fixes
+
+- fix path update in install script ([0975319](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/commit/0975319295450e9fb68db8881bddac326e723a08))
+
 ## [1.1.1](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v1.1.0...v1.1.1) (2025-01-16)
 
 ### 🐛 Bug Fixes
