@@ -65,6 +65,11 @@ constant long TL_SOCKET_CHECK   = 2
 constant long TL_HEARTBEAT      = 3
 constant long TL_VOLUME_RAMP    = 4
 
+constant long TL_DRIVE_TICK_INTERVAL[]   = { 200 }
+constant long TL_SOCKET_CHECK_INTERVAL[] = { 3000 }
+constant long TL_HEARTBEAT_INTERVAL[]    = { 20000 }
+constant long TL_VOLUME_RAMP_INTERVAL[]  = { 250 }
+
 constant integer MAX_LEVELS = 3
 constant integer MAX_OUTPUTS = 1
 
@@ -80,11 +85,6 @@ DEFINE_TYPE
 (*               VARIABLE DEFINITIONS GO BELOW             *)
 (***********************************************************)
 DEFINE_VARIABLE
-
-volatile long driveTick[]   = { 200 }
-volatile long socketCheck[] = { 3000 }
-volatile long heartbeat[]   = { 20000 }
-volatile long volumeRamp[]  = { 250 }
 
 volatile integer output[MAX_LEVELS][MAX_OUTPUTS]
 volatile integer outputPending[MAX_LEVELS][MAX_OUTPUTS]
@@ -272,7 +272,7 @@ define_function NAVModulePropertyEventCallback(_NAVModulePropertyEvent event) {
         case NAV_MODULE_PROPERTY_EVENT_IP_ADDRESS: {
             module.Device.SocketConnection.Address = event.Args[1]
             module.Device.SocketConnection.Port = IP_PORT
-            NAVTimelineStart(TL_SOCKET_CHECK, socketCheck, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
+            NAVTimelineStart(TL_SOCKET_CHECK, TL_SOCKET_CHECK_INTERVAL, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
         }
         case NAV_MODULE_PROPERTY_EVENT_PASSWORD: {
             password = event.Args[1]
@@ -334,8 +334,8 @@ data_event[dvPort] {
 
         SendString("NAV_ESC, '3CV', NAV_CR")
 
-        NAVTimelineStart(TL_DRIVE, driveTick, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
-        NAVTimelineStart(TL_HEARTBEAT, heartbeat, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
+        NAVTimelineStart(TL_DRIVE, TL_DRIVE_TICK_INTERVAL, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
+        NAVTimelineStart(TL_HEARTBEAT, TL_HEARTBEAT_INTERVAL, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
     }
     offline: {
         if (data.device.number == 0) {
@@ -412,7 +412,7 @@ channel_event[vdvObject, 0] {
         switch (channel.channel) {
             case VOL_UP:
             case VOL_DN: {
-                NAVTimelineStart(TL_VOLUME_RAMP, volumeRamp, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
+                NAVTimelineStart(TL_VOLUME_RAMP, TL_VOLUME_RAMP_INTERVAL, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
             }
             case VOL_MUTE: {
                 SendString(BuildMute(!currentMute.Actual))
