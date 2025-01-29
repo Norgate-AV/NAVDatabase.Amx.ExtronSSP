@@ -58,8 +58,6 @@ DEFINE_CONSTANT
 
 constant char DELIMITER[] = "{ {NAV_CR}, {NAV_LF} }"
 
-constant integer IP_PORT = NAV_TELNET_PORT
-
 constant long TL_DRIVE          = 1
 constant long TL_SOCKET_CHECK   = 2
 constant long TL_HEARTBEAT      = 3
@@ -279,7 +277,7 @@ define_function NAVModulePropertyEventCallback(_NAVModulePropertyEvent event) {
     switch (event.Name) {
         case NAV_MODULE_PROPERTY_EVENT_IP_ADDRESS: {
             module.Device.SocketConnection.Address = event.Args[1]
-            module.Device.SocketConnection.Port = IP_PORT
+            module.Device.SocketConnection.Port = NAV_TELNET_PORT
             NAVTimelineStart(TL_SOCKET_CHECK, TL_SOCKET_CHECK_INTERVAL, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
         }
         case NAV_MODULE_PROPERTY_EVENT_PASSWORD: {
