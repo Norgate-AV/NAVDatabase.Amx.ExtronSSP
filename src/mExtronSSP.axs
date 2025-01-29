@@ -159,10 +159,10 @@ define_function MaintainIpConnection() {
 
     switch (module.Device.SocketConnection.Port) {
         case NAV_TELNET_PORT: {
-    NAVClientSocketOpen(dvPort.PORT,
-                        module.Device.SocketConnection.Address,
-                        module.Device.SocketConnection.Port,
-                        IP_TCP)
+            NAVClientSocketOpen(dvPort.PORT,
+                                module.Device.SocketConnection.Address,
+                                module.Device.SocketConnection.Port,
+                                IP_TCP)
             return
         }
 
@@ -367,6 +367,7 @@ data_event[dvPort] {
 
         if (data.device.number == 0) {
             module.Device.SocketConnection.IsConnected = true
+            NAVErrorLog(NAV_LOG_LEVEL_DEBUG, "'mExtronSSP => Socket OnLine'")
         }
 
         SendString("NAV_ESC, '3CV', NAV_CR")
@@ -378,18 +379,23 @@ data_event[dvPort] {
         if (data.device.number == 0) {
             switch (module.Device.SocketConnection.Port) {
                 case NAV_TELNET_PORT: {
-            NAVClientSocketClose(data.device.port)
+                    NAVClientSocketClose(data.device.port)
                 }
                 case SSH_PORT: {
                     NAVClientSecureSocketClose(data.device.port)
                 }
             }
 
+            NAVErrorLog(NAV_LOG_LEVEL_DEBUG, "'mExtronSSP => Socket OffLine'")
+
             Reset()
         }
     }
     onerror: {
         if (data.device.number == 0) {
+            NAVErrorLog(NAV_LOG_LEVEL_ERROR,
+                        "'mExtronSSP => Socket Error: ', NAVGetSocketError(type_cast(data.number))")
+
             if (data.number == NAV_SOCKET_ERROR_CONNECTION_REFUSED) {
                 if (module.Device.SocketConnection.Port == NAV_TELNET_PORT) {
                     module.Device.SocketConnection.Port = SSH_PORT
