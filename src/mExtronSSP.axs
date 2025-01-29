@@ -112,6 +112,10 @@ DEFINE_MUTUALLY_EXCLUSIVE
 (* EXAMPLE: DEFINE_FUNCTION <RETURN_TYPE> <NAME> (<PARAMETERS>) *)
 (* EXAMPLE: DEFINE_CALL '<NAME>' (<PARAMETERS>) *)
 define_function SendString(char payload[]) {
+    if (IsSocket() && !module.Device.SocketConnection.IsConnected) {
+        return
+    }
+
     NAVErrorLog(NAV_LOG_LEVEL_DEBUG,
                 NAVFormatStandardLogMessage(NAV_STANDARD_LOG_MESSAGE_TYPE_STRING_TO,
                                             dvPort,
@@ -125,6 +129,10 @@ define_function SendString(char payload[]) {
 define_function Drive() {
     stack_var integer x
     stack_var integer z
+
+    if (IsSocket() && !module.Device.SocketConnection.IsConnected) {
+        return
+    }
 
     if (module.CommandBusy) {
         return
@@ -293,7 +301,16 @@ define_function NAVModulePassthruEventCallback(_NAVModulePassthruEvent event) {
 #END_IF
 
 
+define_function char IsSocket() {
+    return dvPort.NUMBER == 0
+}
+
+
 define_function VolumeRampEvent() {
+    if (IsSocket() && !module.Device.SocketConnection.IsConnected) {
+        return
+    }
+
     if ([vdvObject, VOL_UP]) {
         SendString('+V')
         return
