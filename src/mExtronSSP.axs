@@ -92,7 +92,7 @@ volatile integer outputActual[MAX_LEVELS][MAX_OUTPUTS]
 volatile _NAVStateInteger currentVolume
 volatile _NAVStateInteger currentMute
 
-volatile char password[NAV_MAX_CHARS]
+volatile _NAVCredential credential = { 'admin', '' }
 
 (***********************************************************)
 (*               LATCHING DEFINITIONS GO BELOW             *)
@@ -156,10 +156,26 @@ define_function MaintainIpConnection() {
         return
     }
 
+    switch (module.Device.SocketConnection.Port) {
+        case NAV_TELNET_PORT: {
     NAVClientSocketOpen(dvPort.PORT,
                         module.Device.SocketConnection.Address,
                         module.Device.SocketConnection.Port,
                         IP_TCP)
+            return
+        }
+
+        case SSH_PORT: {
+            NAVClientSecureSocketOpen(dvPort.PORT,
+                                        module.Device.SocketConnection.Address,
+                                        module.Device.SocketConnection.Port,
+                                        credential.Username,
+                                        credential.Password,
+                                        '', // Private Key Path
+                                        '') // Private Key Password
+            return
+        }
+    }
 }
 
 
@@ -276,12 +292,17 @@ define_function Init() {
 define_function NAVModulePropertyEventCallback(_NAVModulePropertyEvent event) {
     switch (event.Name) {
         case NAV_MODULE_PROPERTY_EVENT_IP_ADDRESS: {
-            module.Device.SocketConnection.Address = event.Args[1]
+            module.Device.SocketConnection.Address = NAVTrimString(event.Args[1])
             module.Device.SocketConnection.Port = NAV_TELNET_PORT
             NAVTimelineStart(TL_SOCKET_CHECK, TL_SOCKET_CHECK_INTERVAL, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
         }
+        case NAV_MODULE_PROPERTY_EVENT_USERNAME: {
+            // If we have received a username, we are using SSH
+            module.Device.SocketConnection.Port = SSH_PORT
+            credential.Username = NAVTrimString(event.Args[1])
+        }
         case NAV_MODULE_PROPERTY_EVENT_PASSWORD: {
-            password = event.Args[1]
+            credential.Password = NAVTrimString(event.Args[1])
         }
     }
 }
@@ -354,12 +375,26 @@ data_event[dvPort] {
     }
     offline: {
         if (data.device.number == 0) {
+            switch (module.Device.SocketConnection.Port) {
+                case NAV_TELNET_PORT: {
             NAVClientSocketClose(data.device.port)
+                }
+                case SSH_PORT: {
+                    NAVClientSecureSocketClose(data.device.port)
+                }
+            }
+
             Reset()
         }
     }
     onerror: {
         if (data.device.number == 0) {
+            if (data.number == NAV_SOCKET_ERROR_CONNECTION_REFUSED) {
+                if (module.Device.SocketConnection.Port == NAV_TELNET_PORT) {
+                    module.Device.SocketConnection.Port = SSH_PORT
+                }
+            }
+
             Reset()
         }
     }
@@ -376,7 +411,7 @@ data_event[dvPort] {
         select {
             active (NAVContains(module.RxBuffer.Data, "'Password:'")): {
                 module.RxBuffer.Data = '';
-                SendString("password, NAV_CR, NAV_LF");
+                SendString("credential.Password, NAV_CR, NAV_LF");
             }
             active (true): {
                 NAVStringGather(module.RxBuffer, "NAV_CR, NAV_LF")

@@ -39,6 +39,12 @@ SOFTWARE.
 #DEFINE __LIB_EXTRONSSP__ 'LibExtronSSP'
 
 
+DEFINE_CONSTANT
+
+constant char DEFAULT_USERNAME[] = 'admin'
+constant integer SSH_PORT = 22023
+
+
 define_function char[NAV_MAX_BUFFER] BuildSwitch(integer input) {
     return "itoa(input), '$'"
 }
