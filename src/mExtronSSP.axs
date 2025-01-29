@@ -109,6 +109,7 @@ DEFINE_MUTUALLY_EXCLUSIVE
 (***********************************************************)
 (* EXAMPLE: DEFINE_FUNCTION <RETURN_TYPE> <NAME> (<PARAMETERS>) *)
 (* EXAMPLE: DEFINE_CALL '<NAME>' (<PARAMETERS>) *)
+
 define_function SendString(char payload[]) {
     if (IsSocket() && !module.Device.SocketConnection.IsConnected) {
         return
