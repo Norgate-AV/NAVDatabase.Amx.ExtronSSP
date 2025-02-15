@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.1](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v1.2.0...v1.2.1) (2025-02-15)
+
+### 🚀 Performance
+
+- remove unnecessary logging ([00883a2](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/commit/00883a23b4920114afeedc2b51556db4ce0c6f45))
+
 ## [1.2.0](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v1.1.2...v1.2.0) (2025-01-29)
 
 ### 🌟 Features
