@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.0](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v1.1.2...v1.2.0) (2025-01-29)
+
+### 🌟 Features
+
+- add support for ssh connections ([3f230e6](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/commit/3f230e63164028ee059fc839b56ba64166f2adb9))
+- improve socket connection logging ([0ca2a19](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/commit/0ca2a196da22538f75ebfe64a2069af310a66e10))
+
+### 🐛 Bug Fixes
+
+- dont send strings to an unconnected socket ([a72a2e5](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/commit/a72a2e5d72e97c0ca0ba6b79685bfea7bb5a1596))
+
+### 🚀 Performance
+
+- move timeline arrays to constants ([8ef984f](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/commit/8ef984fd8ee25013d28be33bf632bfc8d6089f3a))
+
 ## [1.1.2](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v1.1.1...v1.1.2) (2025-01-16)
 
 ### 🐛 Bug Fixes
