@@ -67,9 +67,9 @@ DEFINE_TYPE
 (***********************************************************)
 DEFINE_VARIABLE
 
-volatile integer locked
+volatile char locked
 
-volatile integer levelTouched
+volatile char levelTouched
 
 volatile sinteger currentLevel
 
@@ -91,21 +91,13 @@ DEFINE_MUTUALLY_EXCLUSIVE
 (* EXAMPLE: DEFINE_CALL '<NAME>' (<PARAMETERS>) *)
 
 define_function Update(dev device[], sinteger level) {
-    stack_var integer x
-    stack_var integer length
-
     if (levelTouched) {
         return
     }
 
     currentLevel = level
 
-    length = length_array(device)
-
-    for (x = 1; x <= length; x++) {
-        send_level device[x], VOL_LVL, level
-    }
-
+    NAVSendLevelArray(device, VOL_LVL, type_cast(level))
     NAVTextArray(device, ADDRESS_LEVEL_PERCENTAGE, '0', "itoa(NAVScaleValue(type_cast(level), 255, 100, 0)), '%'")
 }
 
@@ -117,6 +109,13 @@ define_function LevelEventHandler(dev device[], tlevel level) {
 
     NAVCommand(vdvObject, "'VOLUME-', itoa(level.value)")
     NAVTextArray(device, ADDRESS_LEVEL_PERCENTAGE, '0', "itoa(NAVScaleValue(type_cast(level.value), 255, 100, 0)), '%'")
+}
+
+
+define_function UpdateFeedback() {
+    [dvTP, LOCK_TOGGLE]	= (locked)
+    [dvTP, LOCK_ON]	= (locked)
+    [dvTP, LOCK_OFF]	= (!locked)
 }
 
 
@@ -148,12 +147,15 @@ button_event[dvTP, 0] {
             }
             case LOCK_TOGGLE: {
                 locked = !locked
+                UpdateFeedback()
             }
             case LOCK_ON: {
                 locked = true
+                UpdateFeedback()
             }
             case LOCK_OFF: {
                 locked = false
+                UpdateFeedback()
             }
             case LEVEL_TOUCH: {
                 levelTouched = true
@@ -182,30 +184,7 @@ data_event[dvTP] {
 }
 
 
-data_event[vdvObject] {
-    command: {
-        stack_var _NAVSnapiMessage message
-
-        NAVParseSnapiMessage(data.text, message)
-
-        switch (message.Header) {
-            default: {
-
-            }
-        }
-    }
-}
-
-
-timeline_event[TL_NAV_FEEDBACK] {
-    [dvTP, LOCK_TOGGLE]	= (locked)
-    [dvTP, LOCK_ON]	= (locked)
-    [dvTP, LOCK_OFF]	= (!locked)
-}
-
-
 (***********************************************************)
 (*                     END OF PROGRAM                      *)
 (*        DO NOT PUT ANY CODE BELOW THIS COMMENT           *)
 (***********************************************************)
-

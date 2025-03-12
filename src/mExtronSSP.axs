@@ -13,6 +13,8 @@ MODULE_NAME='mExtronSSP'    (
 #include 'NAVFoundation.SocketUtils.axi'
 #include 'NAVFoundation.ArrayUtils.axi'
 #include 'NAVFoundation.StringUtils.axi'
+#include 'NAVFoundation.ErrorLogUtils.axi'
+#include 'NAVFoundation.TimelineUtils.axi'
 #include 'LibExtronSSP.axi'
 
 /*
@@ -56,7 +58,7 @@ DEFINE_DEVICE
 (***********************************************************)
 DEFINE_CONSTANT
 
-constant char DELIMITER[] = "{ {NAV_CR}, {NAV_LF} }"
+constant char DELIMITER[] = { $0D, $0A }
 
 constant long TL_DRIVE          = 1
 constant long TL_SOCKET_CHECK   = 2
@@ -67,9 +69,6 @@ constant long TL_DRIVE_TICK_INTERVAL[]   = { 200 }
 constant long TL_SOCKET_CHECK_INTERVAL[] = { 3000 }
 constant long TL_HEARTBEAT_INTERVAL[]    = { 20000 }
 constant long TL_VOLUME_RAMP_INTERVAL[]  = { 250 }
-
-constant integer MAX_LEVELS = 3
-constant integer MAX_OUTPUTS = 1
 
 constant integer MAX_VOLUME = 100
 constant integer MIN_VOLUME = 0
@@ -84,10 +83,9 @@ DEFINE_TYPE
 (***********************************************************)
 DEFINE_VARIABLE
 
-volatile integer output[MAX_LEVELS][MAX_OUTPUTS]
-volatile integer outputPending[MAX_LEVELS][MAX_OUTPUTS]
-
-volatile integer outputActual[MAX_LEVELS][MAX_OUTPUTS]
+volatile integer output
+volatile char outputPending
+volatile integer outputActual
 
 volatile _NAVStateInteger currentVolume
 volatile _NAVStateInteger currentMute
@@ -129,7 +127,7 @@ define_function SendString(char payload[]) {
 
 define_function Drive() {
     stack_var integer x
-    stack_var integer z
+    stack_var integer pending
 
     if (IsSocket() && !module.Device.SocketConnection.IsConnected) {
         return
@@ -139,18 +137,22 @@ define_function Drive() {
         return
     }
 
-    z = NAV_SWITCH_LEVEL_AUD
-
-    for (x = 1; x <= MAX_OUTPUTS; x++) {
-        if (!outputPending[z][x] || module.CommandBusy) {
-            continue
-        }
-
-        outputPending[z][x] = false
-        module.CommandBusy = true
-
-        SendString(BuildSwitch(output[z][x]))
+    if (!outputPending) {
+        NAVTimelineStop(TL_DRIVE)
+        return
     }
+
+    outputPending = false
+    module.CommandBusy = true
+    SendString(BuildSwitch(output))
+
+    // Check again if we have a pending command
+    // Before we kill the timeline
+    if (outputPending) {
+        return
+    }
+
+    NAVTimelineStop(TL_DRIVE)
 }
 
 
@@ -207,18 +209,21 @@ define_function NAVStringGatherCallback(_NAVStringGatherResult args) {
 
             input = atoi(data)
 
-            if (input == outputActual[NAV_SWITCH_LEVEL_AUD][1]) {
+            if (input == outputActual) {
                 return
             }
 
-            outputActual[NAV_SWITCH_LEVEL_AUD][1] = input
+            outputActual = input
             send_string vdvObject, "'SWITCH-', itoa(input)"
 
             if (module.Device.IsInitialized) {
                 return
             }
 
-            module.Device.IsInitialized = true
+            if (!module.Device.IsInitialized) {
+                module.Device.IsInitialized = true
+                UpdateFeedback()
+            }
         }
         active (NAVStartsWith(data, 'Vol')): {
             stack_var integer volume
@@ -270,9 +275,11 @@ define_function CommunicationTimeOut(integer timeout) {
     cancel_wait 'TimeOut'
 
     module.Device.IsCommunicating = true
+    UpdateFeedback()
 
     wait (timeout * 10) 'TimeOut' {
         module.Device.IsCommunicating = false
+        UpdateFeedback()
     }
 }
 
@@ -280,6 +287,7 @@ define_function CommunicationTimeOut(integer timeout) {
 define_function Reset() {
     module.Device.SocketConnection.IsConnected = false
     module.Device.IsCommunicating = false
+    UpdateFeedback()
 
     NAVTimelineStop(TL_HEARTBEAT)
     NAVTimelineStop(TL_DRIVE)
@@ -299,7 +307,10 @@ define_function NAVModulePropertyEventCallback(_NAVModulePropertyEvent event) {
         case NAV_MODULE_PROPERTY_EVENT_IP_ADDRESS: {
             module.Device.SocketConnection.Address = NAVTrimString(event.Args[1])
             module.Device.SocketConnection.Port = NAV_TELNET_PORT
-            NAVTimelineStart(TL_SOCKET_CHECK, TL_SOCKET_CHECK_INTERVAL, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
+            NAVTimelineStart(TL_SOCKET_CHECK,
+                            TL_SOCKET_CHECK_INTERVAL,
+                            TIMELINE_ABSOLUTE,
+                            TIMELINE_REPEAT)
         }
         case NAV_MODULE_PROPERTY_EVENT_USERNAME: {
             // If we have received a username, we are using SSH
@@ -347,6 +358,14 @@ define_function VolumeRampEvent() {
 }
 
 
+define_function UpdateFeedback() {
+    [vdvObject, NAV_IP_CONNECTED]	= (module.Device.SocketConnection.IsConnected)
+    [vdvObject, DEVICE_COMMUNICATING] = (module.Device.IsCommunicating)
+    [vdvObject, DATA_INITIALIZED] = (module.Device.IsInitialized)
+    [vdvObject, VOL_MUTE_FB] = (currentMute.Actual)
+}
+
+
 (***********************************************************)
 (*                STARTUP CODE GOES BELOW                  *)
 (***********************************************************)
@@ -376,8 +395,10 @@ data_event[dvPort] {
 
         SendString("NAV_ESC, '3CV', NAV_CR")
 
-        NAVTimelineStart(TL_DRIVE, TL_DRIVE_TICK_INTERVAL, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
-        NAVTimelineStart(TL_HEARTBEAT, TL_HEARTBEAT_INTERVAL, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
+        NAVTimelineStart(TL_HEARTBEAT,
+                        TL_HEARTBEAT_INTERVAL,
+                        TIMELINE_ABSOLUTE,
+                        TIMELINE_REPEAT)
     }
     offline: {
         if (data.device.number == 0) {
@@ -441,8 +462,12 @@ data_event[vdvObject] {
 
         switch (message.Header) {
             case NAV_MODULE_EVENT_SWITCH: {
-                output[NAV_SWITCH_LEVEL_AUD][1] = atoi(message.Parameter[1])
-                outputPending[NAV_SWITCH_LEVEL_AUD][1] = true
+                output = atoi(message.Parameter[1])
+                outputPending = true
+                NAVTimelineStart(TL_DRIVE,
+                                TL_DRIVE_TICK_INTERVAL,
+                                TIMELINE_ABSOLUTE,
+                                TIMELINE_REPEAT)
             }
             case NAV_MODULE_EVENT_VOLUME: {
                 switch (message.Parameter[1]) {
@@ -452,7 +477,11 @@ data_event[vdvObject] {
                     default: {
                         stack_var sinteger value
 
-                        value = NAVScaleValue(atoi(message.Parameter[1]), 255, (MAX_VOLUME - MIN_VOLUME), 0)
+                        value = NAVScaleValue(atoi(message.Parameter[1]),
+                                                255,
+                                                (MAX_VOLUME - MIN_VOLUME),
+                                                0)
+
                         SendString(BuildVolume(type_cast(value)))
                     }
                 }
@@ -470,7 +499,10 @@ channel_event[vdvObject, 0] {
         switch (channel.channel) {
             case VOL_UP:
             case VOL_DN: {
-                NAVTimelineStart(TL_VOLUME_RAMP, TL_VOLUME_RAMP_INTERVAL, TIMELINE_ABSOLUTE, TIMELINE_REPEAT)
+                NAVTimelineStart(TL_VOLUME_RAMP,
+                                TL_VOLUME_RAMP_INTERVAL,
+                                TIMELINE_ABSOLUTE,
+                                TIMELINE_REPEAT)
             }
             case VOL_MUTE: {
                 SendString(BuildMute(!currentMute.Actual))
@@ -496,14 +528,6 @@ timeline_event[TL_SOCKET_CHECK] { MaintainIpConnection() }
 
 timeline_event[TL_HEARTBEAT] {
     SendString("NAV_ESC, '3CV', NAV_CR")
-}
-
-
-timeline_event[TL_NAV_FEEDBACK] {
-    [vdvObject, NAV_IP_CONNECTED]	= (module.Device.SocketConnection.IsConnected)
-    [vdvObject, DEVICE_COMMUNICATING] = (module.Device.IsCommunicating)
-    [vdvObject, DATA_INITIALIZED] = (module.Device.IsInitialized)
-    [vdvObject, VOL_MUTE_FB] = (currentMute.Actual)
 }
 
 
