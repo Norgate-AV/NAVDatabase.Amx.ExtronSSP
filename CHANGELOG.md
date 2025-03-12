@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v1.3.0...v2.0.0) (2025-03-12)
+
+### ⚠ BREAKING CHANGES
+
+- Internal blinking logic has been removed from all UI modules. If you wish to
+  haveblinking feedback for a mute button this must now be implemented outside the module.
+
+### 🌟 Features
+
+- update to support NAVFoundation.Amx v2.0.0 ([31bb6e9](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/commit/31bb6e99b046c64457aa7581b0a2dc9ef7eeafb8))
+
 ## [1.3.0](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v1.2.1...v1.3.0) (2025-02-17)
 
 ### 🌟 Features
