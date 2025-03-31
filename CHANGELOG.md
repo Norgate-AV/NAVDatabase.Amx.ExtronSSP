@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.1](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v2.0.0...v2.0.1) (2025-03-31)
+
+### 🐛 Bug Fixes
+
+- apply fixes from NAVFoundation.Amx v2.0.1 ([4de0c1f](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/commit/4de0c1f74d0e6531cd7b7a8b2a19231d7ba362e5))
+
 ## [2.0.0](https://github.com/Norgate-AV/NAVDatabase.Amx.ExtronSSP/compare/v1.3.0...v2.0.0) (2025-03-12)
 
 ### ⚠ BREAKING CHANGES
